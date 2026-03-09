@@ -1,7 +1,7 @@
 const Right = function () {
     return (
-        <div className="w-1/2 border-l h-full bg-blue-100 dark:bg-blue-800">
-            direita
+        <div className="w-1/2 border-l border-slate-100 dark:border-slate-800 h-full bg-[#f0f4ff] dark:bg-slate-900">
+            
         </div>
     )
 }
