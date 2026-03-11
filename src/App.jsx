@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import Left from './components/Left.jsx'
 import Right from './components/Right.jsx'
-import { Moon, Sun } from 'lucide-react'
+import { Moon, Sun, Sparkles } from 'lucide-react'
 
 function App() {
   const [isDark, setIsDark] = useState(false)
