@@ -1,10 +1,16 @@
 import { Send, SendHorizonal, Sparkles } from "lucide-react";
 import { useState } from "react"
 
-const Left = function () {
+const SYSTEM_PROMPT = `Você é um assistente de lista de compras. Receba uma lista informal de itens e retorne APENAS um JSON válido no seguinte formato:
+[{ "category": "Nome da categoria", "items": ["item1", "item2"] }]
+Agrupe por categoria de supermercado (Hortifrúti, Laticínios, Padaria, Limpeza, etc).`
+
+const Left = function ({ setItems }) {
 
     const [conteudoTextual, setConteudoTextual] = useState(""); // conteudoTextual é a variável, setConteudoTextual é a função que define o valor da variável, useState é basicamente uma definição do react pra dizer que isso é uma variável do react. o que está dentro do usestate é o valor padrão, inicial, daquela variável
     const [buttonDisabled, setButtonDisabled] = useState(true)
+    const [isLoading, setIsLoading] = useState(false)
+    const [erro, setErro] = useState(null)
 
     const mudarVariavelConteudoTextual = (texto) => { // essa é a função que dispara quando o input muda de valor, ou seja quando alguém escreve alguma coisa no input
         setConteudoTextual(texto); // ele recebe o texto e executa setConteudoTextual(texto), que significa que a variável conteudoTextual irá mudar de valor para o que foi escrito
@@ -16,8 +22,40 @@ const Left = function () {
         }
     }
 
-    const dispararAcaoDoClique = () => {
-        console.log("")
+    const dispararAcaoDoClique = async () => {
+        setIsLoading(true)
+        setButtonDisabled(true)
+        setErro(null)
+        try {
+            const apiKey = import.meta.env.VITE_GEMINI_API_KEY
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`
+
+            const resposta = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    generationConfig: { responseMimeType: "application/json" },
+                    systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+                    contents: [{ parts: [{ text: conteudoTextual }] }]
+                })
+            })
+
+            const data = await resposta.json()
+
+            if (!resposta.ok || !data.candidates) {
+                const mensagem = data?.error?.message ?? `Erro ${resposta.status}`
+                throw new Error(mensagem)
+            }
+
+            const lista = JSON.parse(data.candidates[0].content.parts[0].text)
+            setItems(lista)
+        } catch (e) {
+            setErro(e.message)
+            console.error("Erro ao chamar a API do Gemini:", e)
+        } finally {
+            setIsLoading(false)
+            setButtonDisabled(false)
+        }
     }
 
     return (
@@ -39,6 +77,7 @@ const Left = function () {
                 ">
                 <textarea
                     value={conteudoTextual}
+                    placeholder="Ex: Preciso de ovos, leite e papel higiênico."
                     onChange={(e) => mudarVariavelConteudoTextual(e.target.value)}
                     type="text"
                     className="scrollbar-thin w-full h-4/5 focus:outline-none dark:text-slate-400 resize-none pr-2 
@@ -49,16 +88,23 @@ const Left = function () {
                     scrollbar-track-rounded-full"
                 /> 
                 <button 
-                    disabled={buttonDisabled} 
+                    disabled={buttonDisabled || isLoading}
+                    onClick={dispararAcaoDoClique}
                     className="
                         ml-auto hover:cursor-pointer dark:text-slate-400 text-slate-100
                         mr-6 dark:bg-blue-700 bg-blue-600 rounded-lg items-center p-2
                         disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:opacity-60
                         transition-opacity duration-200 mt-2
                     ">
-                    <SendHorizonal size={21} />
+                    {isLoading
+                        ? <span className="block w-[21px] h-[21px] border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                        : <SendHorizonal size={21} />
+                    }
                 </button>
             </div>
+            {erro && (
+                <p className="mt-3 text-sm text-red-500 dark:text-red-400">{erro}</p>
+            )}
         </div> 
         </div>
     )

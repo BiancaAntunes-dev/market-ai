@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import Left from './components/Left.jsx'
 import Right from './components/Right.jsx'
-import { Moon, Sun, Sparkles } from 'lucide-react'
+import { Moon, Sun} from 'lucide-react'
 
 function App() {
   const [isDark, setIsDark] = useState(false)
+  const [items, setItems] = useState([])
 
   const toggleTheme = () => {
     setIsDark(isDark ? false : true)
@@ -21,8 +22,8 @@ function App() {
         {isDark ? <Sun size={20} /> : <Moon size={20} />}
     
       </button>
-      <Left />
-      <Right />
+      <Left setItems={setItems} />
+      <Right items={items} />
     </main>
   )
 }
